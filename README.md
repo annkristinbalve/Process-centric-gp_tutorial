@@ -6,4 +6,4 @@ A Binder-compatible repository with a `requirements.txt` file.
 
 Access this Binder-compatible repository at the following URL:
 
-[https://github.com/annkristinbalve/Process-centric-gp_tutorial](https://github.com/annkristinbalve/Process-centric-gp_tutorial)
+[https://mybinder.org/v2/gh/annkristinbalve/Process-centric-gp_tutorial/main?urlpath=voila%2Frender%2Ftutorial.ipynb](https://mybinder.org/v2/gh/annkristinbalve/Process-centric-gp_tutorial/main?urlpath=voila%2Frender%2Ftutorial.ipynb)
