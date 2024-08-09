@@ -40,7 +40,6 @@ from data import *
 from IPython.display import display
 from widgets_helper import * #range_slider, kernel_dropdown, mean_dropdown
 from layout_helper import *
-from visualisations import *
 
 
 #### MULTIVARIATE GAUSSIAN PLOTTING CODE #######
@@ -68,26 +67,27 @@ def conditional_distribution(x, y_value, mean, cov):
     var_x_given_y = cov[0, 0] - cov[0, 1]**2 / cov[1, 1]
     return norm.pdf(x, mean_x_given_y, np.sqrt(var_x_given_y))
     
-def plot_multivariate_Gaussian_2d(mean, cov, y_value=None):    
-    x = np.linspace(-5,5,50)
-    y = np.linspace(-5,5,50)
+def plot_multivariate_Gaussian_2d(mean, cov, x2_value=None):    
+    x = np.linspace(-5, 5, 50)
+    y = np.linspace(-5, 5, 50)
     
-    X, Y = np.meshgrid(x, y)
-    pos = np.dstack((X, Y))
+    X1, X2 = np.meshgrid(x, y)
+    pos = np.dstack((X1, X2))
     
     rv = multivariate_normal(mean, cov, allow_singular=True)
     Z = rv.pdf(pos)
     
     # Marginal distributions
-    marginal_x = norm(loc=mean[0], scale=np.sqrt(cov[0, 0]))
-    marginal_y = norm(loc=mean[1], scale=np.sqrt(cov[1, 1]))
+    marginal_x1 = norm(loc=mean[0], scale=np.sqrt(cov[0, 0]))
+    marginal_x2 = norm(loc=mean[1], scale=np.sqrt(cov[1, 1]))
     
-    x_kde = np.linspace(-5,5,50)
-    y_kde = np.linspace(-5,5,50)
+    x1_kde = np.linspace(-5, 5, 50)
+    x2_kde = np.linspace(-5, 5, 50)
     
-    marginal_x_vals = marginal_x.pdf(x_kde)
-    marginal_y_vals = marginal_y.pdf(y_kde)
+    marginal_x1_vals = marginal_x1.pdf(x1_kde)
+    marginal_x2_vals = marginal_x2.pdf(x2_kde)
     
+    # Create subplots with shared x and y axes
     fig = make_subplots(rows=2, cols=2, 
                         shared_xaxes=True, shared_yaxes=True,
                         vertical_spacing=0.05, horizontal_spacing=0.05,
@@ -95,29 +95,39 @@ def plot_multivariate_Gaussian_2d(mean, cov, y_value=None):
                         specs=[[{"type": "xy"}, {"type": "xy"}], 
                                [{"type": "xy"}, {"type": "xy"}]])
     
+    # Main contour plot
     fig.add_trace(go.Contour(
-        x=x, y=y, z=Z, colorscale='RdYlBu', contours_coloring='fill', line_width=1, opacity=0.7,
+        x=x, y=y, z=Z, colorscale='RdYlBu', contours_coloring='fill', line_width=1, opacity=0.8, colorbar=dict(x=1.1)  # Move the color scale to the right
+
     ), row=2, col=1)
 
-    fig.add_trace(go.Scatter(x=marginal_y_vals, y=y_kde, mode='lines', line=dict(color='green', width=2), name='Marginal Y'), row=2, col=2)
-    fig.add_trace(go.Scatter(x=x_kde, y=marginal_x_vals, mode='lines', line=dict(color='blue', width=2), name='Marginal X'), row=1, col=1)
+    # Marginal distributions
+    fig.add_trace(go.Scatter(x=x1_kde, y=marginal_x1_vals, mode='lines', line=dict(color='black', width=2), name='Marginal p(x1)'), row=1, col=1)
 
-    if y_value is not None:
+    fig.add_trace(go.Scatter(x=marginal_x2_vals, y=x2_kde, mode='lines', line=dict(color='green', width=2), name='Marginal p(x2)'), row=2, col=2)
+
+
+    if x2_value is not None:
         conditional_x = np.linspace(mean[0] - 3*np.sqrt(cov[0, 0]), mean[0] + 3*np.sqrt(cov[0, 0]), 100)
-        conditional_z = conditional_distribution(conditional_x, y_value, mean, cov) + y_value
-        fig.add_trace(go.Scatter(x=conditional_x, y=conditional_z, mode='lines', line=dict(color='purple'), name=f'Conditional X|Y={y_value}'), row=2, col=1)
+        conditional_z = conditional_distribution(conditional_x, x2_value, mean, cov) + x2_value
+        fig.add_trace(go.Scatter(x=conditional_x, y=conditional_z, mode='lines', line=dict(color='purple'), name=f'Conditional p(x1|x2={x2_value})'), row=2, col=1)
 
-    fig.add_trace(go.Scatter(x=[mean[0]], y=[mean[1]], mode='markers', name='Mean', marker=dict(color='blue', size=12)), row=2, col=1)
-    eigvals, eigvecs = np.linalg.eigh(cov)
+    fig.add_trace(go.Scatter(x=[mean[0]], y=[mean[1]], mode='markers', name=r'Mean (μ))', marker=dict(color='darkblue', size=12)), row=2, col=1)
     
     # Plot the eigenvectors scaled by the square root of eigenvalues
+    eigvals, eigvecs = np.linalg.eigh(cov)
     for i in range(2):
         fig.add_trace(go.Scatter(
-            x=[mean[0], mean[0] +  2 * np.sqrt(eigvals[i]) * eigvecs[0, i]], 
+            x=[mean[0], mean[0] + 2 * np.sqrt(eigvals[i]) * eigvecs[0, i]], 
             y=[mean[1], mean[1] + 2 * np.sqrt(eigvals[i]) * eigvecs[1, i]],
-            mode='lines+markers', name=f'Eigenvector {i+1}', line=dict(color=['red', 'blue'][i])
+            mode='lines+markers', name=f'2{["σ₁","σ₂"][i]}', line=dict(color=['cyan', 'magenta'][i])
         ), row=2, col=1)
+        end_x = mean[0] + 2 * np.sqrt(eigvals[i]) * eigvecs[0, i]
+        end_y = mean[1] + 2 * np.sqrt(eigvals[i]) * eigvecs[1, i]
         
+     
+    
+    # Update layout
     fig.update_layout(
         title_text='Bivariate Gaussian Distribution with Marginals',
         title_y=0.95,
@@ -127,11 +137,13 @@ def plot_multivariate_Gaussian_2d(mean, cov, y_value=None):
         legend=dict(x=0.7, y=1),
         plot_bgcolor='white',
         paper_bgcolor='white',
-        uirevision='true'  )
-    fig.update_xaxes(title_text="X", row=2, col=1, showgrid=False)
-    fig.update_yaxes(title_text="Y", row=2, col=1, showgrid=False)
-    fig.show()
+        uirevision='true',
+
+    )
     
+    fig.update_xaxes(title_text="x1", row=2, col=1, showgrid=False)
+    fig.update_yaxes(title_text="x2", row=2, col=1, showgrid=False)
+    fig.show()
 
 def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
     n_samples = 100
@@ -139,8 +151,8 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
     
     x = np.linspace(mean[0] - 6*np.sqrt(cov[0, 0]), mean[0] + 6*np.sqrt(cov[0, 0]), 100)
     y = np.linspace(mean[1] - 6*np.sqrt(cov[1, 1]), mean[1] + 6*np.sqrt(cov[1, 1]), 100)
-    X, Y = np.meshgrid(x, y)
-    pos = np.dstack((X, Y))
+    X1, X2 = np.meshgrid(x, y)
+    pos = np.dstack((X1, X2))
     
     try:
         rv = multivariate_normal(mean, cov, allow_singular=True)
@@ -149,51 +161,51 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
     Z = rv.pdf(pos)
     
     # Marginal distributions
-    marginal_x = norm(loc=mean[0], scale=np.sqrt(cov[0, 0]))
-    marginal_y = norm(loc=mean[1], scale=np.sqrt(cov[1, 1]))
+    marginal_x1 = norm(loc=mean[0], scale=np.sqrt(cov[0, 0]))
+    marginal_x2 = norm(loc=mean[1], scale=np.sqrt(cov[1, 1]))
     
     # Create the 3D plot
     fig = go.Figure()
-    fig.add_trace(go.Surface(x=X, y=Y, z=Z, colorscale='RdYlBu', opacity=0.7, cmin=0, cmax=Z.max()))
+    fig.add_trace(go.Surface(x=X1, y=X2, z=Z, colorscale='RdYlBu', opacity=0.7, cmin=0, cmax=Z.max()))
 
         # Plot KDE for smoother marginal distributions
-    x_kde = np.linspace(mean[0] - 6*np.sqrt(cov[0, 0]), mean[0] + 6*np.sqrt(cov[0, 0]), 100)
-    y_kde = np.linspace(mean[1] - 6*np.sqrt(cov[1, 1]), mean[1] + 6*np.sqrt(cov[1, 1]), 100)
+    x1_kde = np.linspace(mean[0] - 6*np.sqrt(cov[0, 0]), mean[0] + 6*np.sqrt(cov[0, 0]), 100)
+    x2_kde = np.linspace(mean[1] - 6*np.sqrt(cov[1, 1]), mean[1] + 6*np.sqrt(cov[1, 1]), 100)
     
-    marginal_x_vals = marginal_x.pdf(x_kde)
-    marginal_y_vals = marginal_y.pdf(y_kde)
+    marginal_x1_vals = marginal_x1.pdf(x1_kde)
+    marginal_x2_vals = marginal_x2.pdf(x2_kde)
     
     # Specify a y_value for the conditional distribution
     if y_value != None:
         #y_value = 1.5  # You can choose any value you like
-        conditional_x = np.linspace(-6, 6, 100)
-        conditional_z = conditional_distribution(conditional_x, y_value, mean, cov) #+ y_value
+        conditional_x1 = np.linspace(-6, 6, 100)
+        conditional_z = conditional_distribution(conditional_x1, y_value, mean, cov) #+ y_value
         fig.add_trace(go.Scatter3d(
-            x=conditional_x,
-            y=np.full_like(conditional_x,y_value),
+            x=conditional_x1,
+            y=np.full_like(conditional_x1,y_value),
             z=0.4*conditional_z-0.4,
             mode='lines',
             line=dict(color='purple',width=4),
-            name=f"Conditional (X | Y = {y_value})" ))
+            name=f"Conditional (x1 | x2 = {y_value})" ))
  
 # Plot marginal distributions
     fig.add_trace(go.Scatter3d(
-        x=x_kde, 
-        y=np.full_like(x_kde, mean[1] - 6*np.sqrt(cov[1, 1])), 
-        z=marginal_x_vals, 
+        x=x1_kde, 
+        y=np.full_like(x1_kde, mean[1] - 6*np.sqrt(cov[1, 1])), 
+        z=marginal_x1_vals, 
         mode='lines',
-        line=dict(color='red', width=4),
-        name='Marginal X'))
+        line=dict(color='green', width=4),
+        name='Marginal p(x1)'))
     fig.add_trace(go.Scatter3d(
-        x=np.full_like(y_kde, mean[0] + 6*np.sqrt(cov[0, 0])), 
-        y=y_kde, 
-        z=marginal_y_vals, 
+        x=np.full_like(x2_kde, mean[0] + 6*np.sqrt(cov[0, 0])), 
+        y=x2_kde, 
+        z=marginal_x2_vals, 
         mode='lines',
-        line=dict(color='blue', width=4),
-        name='Marginal Y' ))
+        line=dict(color='black', width=4),
+        name='Marginal p(x2)' ))
     
     # Scatter plot of the samples
-    fig.add_trace(go.Scatter3d(x=samples[:, 0], y=samples[:, 1], z=np.full_like(samples[:, 0], -0.4), name="Samples", mode='markers', marker=dict(size=3, color='black')))
+    fig.add_trace(go.Scatter3d(x=samples[:, 0], y=samples[:, 1], z=np.full_like(samples[:, 0], -0.4), name="Samples", mode='markers', marker=dict(size=3, color='dimgray')))
     
     fig.update_layout(
         xaxis_showgrid=False,
@@ -201,8 +213,8 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
         paper_bgcolor='white',
         plot_bgcolor='white',
         scene=dict(
-            xaxis_title='X',
-            yaxis_title='Y',
+            xaxis_title='x1',
+            yaxis_title='x2',
             zaxis_title='Probability Density'
         ),
         title='Bivariate Gaussian Distribution with Marginals',
@@ -318,25 +330,30 @@ def plot_samples_and_kernels(mu_f, K_f, params, n, k_name=""):
 
 ##### CONDITIONING OPERATION ###########
 
+
 # Function to create prior traces
 def create_prior_traces(fig, Xtest, mu_prior, k_prior, X, y, ytest, ci_color, true_color):
     fig.add_trace(go.Scatter(visible=True, x=Xtest.flatten(), y=mu_prior, mode='lines', name='Prior Mean',
                              line=dict(color="blue", width=2.5, dash='dash')))
     fig.add_trace(go.Scatter(visible=True, x=np.concatenate([Xtest.flatten(), Xtest.flatten()[::-1]]),
                              y=np.concatenate([mu_prior - 1.96 * k_prior, (mu_prior + 1.96 * k_prior)[::-1]]),
-                             fill='toself', fillcolor=ci_color, opacity=0.2, name='95% CI (Prior Variance)', showlegend=True))
-    fig.add_trace(go.Scatter(visible=True, x=X.flatten(), y=y, mode='markers', marker=dict(color='red'), name='Observations'))
+                             fill='toself', fillcolor=ci_color, opacity=0.2, name='Prior Uncertainty (±2σ)', showlegend=True))
+   # fig.add_trace(go.Scatter(visible=True, x=X.flatten(), y=y, mode='markers', marker=dict(color='red'), name='Observations'))
     fig.add_trace(go.Scatter(visible=True, x=Xtest.flatten(), y=ytest, mode='lines', line=dict(color=true_color, width=2), name='Ground truth'))
 
 # Function to create incremental traces
 def create_incremental_traces(fig, mu, k, Xtest, ytest, X, y, Xi, yi, ci_color, true_color):
-    fig.add_trace(go.Scatter(visible=False, x=Xtest.flatten(), y=mu, mode='lines', name='Predictive Mean',
+    fig.add_trace(go.Scatter(visible=False, x=Xtest.flatten(), y=mu, mode='lines', name='Posterior Mean',
                              line=dict(color="blue", width=2.5, dash='dash')))
     fig.add_trace(go.Scatter(visible=False, x=np.concatenate([Xtest.flatten(), Xtest.flatten()[::-1]]),
                              y=np.concatenate([mu - 1.96 * k, (mu + 1.96 * k)[::-1]]),
-                             fill='toself', fillcolor=ci_color, opacity=0.2, name='95% CI (Predictive Variance)', showlegend=True))
+                             fill='toself', fillcolor=ci_color, opacity=0.2, name='Posterior Uncertainty (±2σ)', showlegend=True))
     fig.add_trace(go.Scatter(visible=False, x=X.flatten(), y=y, mode='markers', marker=dict(color='red'), name='Observations', showlegend=False))
-    fig.add_trace(go.Scatter(visible=False, x=Xi.flatten(), y=yi, mode='markers', marker=dict(color='red', size=10), name='Added data point'))
+    if Xi.shape[0]>=2:
+        name = "Added data points"
+    else:
+        name = "Added data point"
+    fig.add_trace(go.Scatter(visible=False, x=Xi.flatten(), y=yi, mode='markers', marker=dict(color='red', size=10), name=name))
     fig.add_trace(go.Scatter(visible=False, x=Xtest.flatten(), y=ytest, mode='lines', line=dict(color=true_color, width=2), name='Ground truth', showlegend=False))
 
 def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_label, mean_f_inc, cov_f_inc, params):
@@ -354,7 +371,7 @@ def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_labe
 
     steps = []
     traces_per_step = 5
-    initial_traces = 4
+    initial_traces = 3 # 4
 
     create_prior_traces(fig, Xtest, mu_prior, k_prior, X, y, ytest, ci_color='#1f77b4', true_color='green')
     step_title = "Prior"
@@ -364,13 +381,17 @@ def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_labe
     for i in range(0, N, batch_size):
         Xi = X[i:i + batch_size].reshape(-1, 1)
         yi = y[i:i + batch_size]
+
+        X_all = X[0:i + batch_size].reshape(-1, 1)
+        y_all = y[0:i + batch_size]
+        
         mean_f_inc, cov_f_inc, log_Z = gp_inference(mean_f_inc, cov_f_inc, params, Xi, yi, False)
         log_Z_inc += log_Z
 
         mu_pred_inc = mean_f_inc(Xtest)
         cov_pred_inc = cov_f_inc(Xtest, Xtest)
         k_pred_inc = np.sqrt(np.diag(cov_pred_inc))
-        create_incremental_traces(fig, mu_pred_inc, k_pred_inc, Xtest, ytest, X, y, Xi, yi, ci_color='#1f77b4', true_color='green')
+        create_incremental_traces(fig, mu_pred_inc, k_pred_inc, Xtest, ytest, X_all, y_all, Xi, yi, ci_color='#1f77b4', true_color='green')
         
         step_title = f"Step {i // batch_size + 1} (log_Z: {log_Z_inc:.2f})"
         visible = [False] * initial_traces + [False] * (traces_per_step * (i // batch_size)) + [True] * traces_per_step + [False] * (traces_per_step * (num_batches - (i // batch_size + 1)))
@@ -409,6 +430,8 @@ def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_labe
 
 ##### MARGINALISATION OPERATION ###########
 
+##### MARGINALISATION OPERATION ###########
+
 def gpr_components_visualisation():
     fig = make_subplots(
         rows=2, cols=4, 
@@ -417,13 +440,28 @@ def gpr_components_visualisation():
         specs=[[{"rowspan": 2}, {}, {}, {}], 
                [None, {}, {}, {}]], 
         horizontal_spacing=0.05,
-        subplot_titles=("", "Prior Cov", "Data Cov", "Post Cov",
-                        "Prior Mean", "Data Mean", "Post Mean", "Post Mean"))
+   # subplot_titles=("", 
+   #                      "kₗᵧ(x, x') = k(x, x') - k(x, x)[K + σₙ²I]⁻¹k(x, x')", 
+   #                      "mₗᵧ(x) = m(x) + k(x, x)[K + σₙ²I]⁻¹(y - m)", 
+   #                      ""))
+
+
+    subplot_titles=("", "k(x,x')", "k(x,x)[K+σₙ²I]⁻¹k(x,x')", "kₗᵧ(x,x')",
+                        "m(x)", "k(x,x)[K+σₙ²I]⁻¹(y-m)", "mₗᵧ(x)", "Post Mean"),
+        
+    )
+     # Reduce the font size for subplot titles
+    for annotation in fig['layout']['annotations']:
+        annotation['font'] = dict(size=12)  # Set the size to a smaller value
+
+
+        #subplot_titles=("", r"$K(x, x')$", r"$K(x, X)K(X, X)^{-1}K(X, x')$", r"$\mu(x)$",
+         #               r"$m(x)$", r"$\Sigma(x, x')$", r"$\Sigma(x, X)\Sigma(X, X)^{-1}$", r"$\Sigma(x, x')$"))
     
     # Add GP Data plot 
     fig.add_trace(go.Scatter(x=[], y=[], mode='markers', marker=dict(color='red'), name='Data'), row=1, col=1)
-    fig.add_trace(go.Scatter(x=[], y=[], mode='lines', line=dict(color="blue", width=3, dash='dash'), name='GP Mean'), row=1, col=1)
-    fig.add_trace(go.Scatter(x=[], y=[], fill='toself', fillcolor='#1f77b4', line=dict(color='rgba(255,255,255,0)'), name='GP 95% CI', opacity=0.2), row=1, col=1)
+    fig.add_trace(go.Scatter(x=[], y=[], mode='lines', line=dict(color="blue", width=3, dash='dash'), name='Posterior Mean'), row=1, col=1)
+    fig.add_trace(go.Scatter(x=[], y=[], fill='toself', fillcolor='#1f77b4', line=dict(color='rgba(255,255,255,0)'), name='Posterior Uncertainty (±2σ)', opacity=0.2), row=1, col=1)
     
     # Add Heatmaps for Covariances
     fig.add_trace(go.Heatmap(z=[], colorscale='RdYlBu',showscale = False), row=1, col=2)
@@ -513,6 +551,8 @@ def gpr_components_visualisation():
         font=dict(size=40),
         xref="paper", yref="paper")
     return fig
+
+
 
 ##### MARGINALISATION  ###########
 
