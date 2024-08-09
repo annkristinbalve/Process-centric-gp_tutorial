@@ -70,7 +70,6 @@ platformdirs==4.2.2
 plotly==5.22.0
 prometheus_client==0.20.0
 prompt_toolkit==3.0.47
-psutil==6.0.0
 pure_eval==0.2.3
 pycparser==2.22
 Pygments==2.18.0
