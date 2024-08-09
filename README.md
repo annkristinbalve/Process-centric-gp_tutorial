@@ -8,5 +8,4 @@ https://mybinder.org/v2/gh/annkristinbalve/Process-centric-gp_tutorial/768e04773
 
 
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([/notebooks/colab-github-demo.ipynb](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial.ipynb)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial.ipynb
-)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial.ipynb)
