@@ -1,11 +1,10 @@
-# Process-centric GPs
+# Interactive Gaussian Process Tutorial using a Jupyter notebook 
 
-The Tutorial can be accessed using Binder. 
-
-[![Binder](http://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/annkristinbalve/Process-centric-gp_tutorial/main?urlpath=lab/tree/tutorial.ipynb)
-
-https://mybinder.org/v2/gh/annkristinbalve/Process-centric-gp_tutorial/768e047733f801e8f5f9555c1cd9d205beb198ba?urlpath=lab%2Ftree%2Ftutorial.ipynb
+Process-centric GPs
 
 
+![conditioning_posteriorgp](https://github.com/user-attachments/assets/aa025a8f-fd8d-4960-8a54-07e312d877f9)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial.ipynb)
+The Tutorial can be accessed using Google-colab. 
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial-colab.ipynb)
