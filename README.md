@@ -7,4 +7,4 @@ Process-centric GPs
 
 The Tutorial can be accessed using Google-colab. 
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial-colab.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/tutorial_colab.ipynb)
