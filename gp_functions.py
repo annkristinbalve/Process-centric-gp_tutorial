@@ -12,7 +12,7 @@ from scipy.spatial.distance import cdist
 from autograd import grad
 from autograd import numpy as anp
 
-def gp_inference(m, k, params, X, y, return_data_contribution = True):
+def GP_conditional(m, k, params, X, y, return_data_contribution = True):
     """
     m: mean function
     k: kernel function
@@ -47,7 +47,7 @@ def draw_samples(m, k, n):
     return y
 
 
-def gp_inference_iterative(m, k, params, X, y, log_Z_old=0):
+def GP_conditional_iterative(m, k, params, X, y, log_Z_old=0):
     """
     m: mean function
     k: kernel function
@@ -71,7 +71,7 @@ def gp_inference_iterative(m, k, params, X, y, log_Z_old=0):
     return mu_f, k_f, log_Z_new
 
     
-def gp_inference_manually(m, k, X, y, params, return_gradients=True):
+def GP_conditional_manually(m, k, X, y, params, return_gradients=True):
     N = X.shape[0]
     K, derivatives_theta = k(X, X, params, True)
     L = np.linalg.cholesky(K + params['noise']**2 * np.eye(X.shape[0]))
@@ -115,7 +115,7 @@ def neg_log_marginal_likelihood(flat_params, param_keys, X, y, m, k, return_comp
 neg_log_marginal_likelihood_grad = grad(neg_log_marginal_likelihood)
 
 # Define the Gaussian Process inference function
-def gp_inference_optimised(m, k, X, y, params):
+def GP_conditional_optimised(m, k, X, y, params):
     param_keys = list(params.keys())
     flat_params = np.array([params[key] for key in param_keys])
     

@@ -13,7 +13,7 @@ import math
 from kernels import rbf_kernel, lin_kernel, periodic_kernel, white_kernel
 from means import zero_mean, sine_mean,lin_mean, step_mean ## importing mean functions 
 
-from gp_functions import gp_inference, GP_marginal, gp_inference_iterative, draw_samples
+from gp_functions import GP_conditional, GP_marginal, GP_conditional_iterative, draw_samples
 import plotly.subplots as sp
 from plotly.subplots import make_subplots
 import json
@@ -47,19 +47,15 @@ from layout_helper import *
 def is_positive_semi_definite_2x2(matrix):
     if matrix.shape != (2, 2):
         raise ValueError("The matrix is not 2x2")
-
     if matrix[0, 1] != matrix[1, 0]:
         raise ValueError("The matrix is not symmetric.")
-
     a = matrix[0, 0]
     b = matrix[0, 1]
     d = matrix[1, 1]
-
     if a < 0:
         return False
     if a * d - b * b < 0:
         return False
-
     return True
 
 def conditional_distribution(x, y_value, mean, cov):
@@ -97,14 +93,14 @@ def plot_multivariate_Gaussian_2d(mean, cov, x2_value=None):
     
     # Main contour plot
     fig.add_trace(go.Contour(
-        x=x, y=y, z=Z, colorscale='RdYlBu', contours_coloring='fill', line_width=1, opacity=0.8, colorbar=dict(x=1.1)  # Move the color scale to the right
+        x=x, y=y, z=Z, colorscale='RdYlBu', contours_coloring='fill', line_width=1, opacity=0.8, colorbar=dict(x=1.1,len = 0.4, yanchor = "middle", y = 0.35)  # Move the color scale to the right
 
     ), row=2, col=1)
 
     # Marginal distributions
-    fig.add_trace(go.Scatter(x=x1_kde, y=marginal_x1_vals, mode='lines', line=dict(color='black', width=2), name='Marginal p(x1)'), row=1, col=1)
+    fig.add_trace(go.Scatter(x=x1_kde, y=marginal_x1_vals, mode='lines', line=dict(color='green', width=2), name='Marginal p(x1)'), row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=marginal_x2_vals, y=x2_kde, mode='lines', line=dict(color='green', width=2), name='Marginal p(x2)'), row=2, col=2)
+    fig.add_trace(go.Scatter(x=marginal_x2_vals, y=x2_kde, mode='lines', line=dict(color='black', width=2), name='Marginal p(x2)'), row=2, col=2)
 
 
     if x2_value is not None:
@@ -116,30 +112,43 @@ def plot_multivariate_Gaussian_2d(mean, cov, x2_value=None):
     
     # Plot the eigenvectors scaled by the square root of eigenvalues
     eigvals, eigvecs = np.linalg.eigh(cov)
+
+
     for i in range(2):
+        if i == 0:
+            # Use the same label for both lines, show the legend entry for the first line
+            name = "2√λ₁v₁"
+            color = "magenta"
+        else:
+            # Use the same label for the second line, but don't show it in the legend
+            name = "2√λ₂v₂"
+            color = "cyan"
+    
         fig.add_trace(go.Scatter(
             x=[mean[0], mean[0] + 2 * np.sqrt(eigvals[i]) * eigvecs[0, i]], 
             y=[mean[1], mean[1] + 2 * np.sqrt(eigvals[i]) * eigvecs[1, i]],
-            mode='lines+markers', name=f'2{["σ₁","σ₂"][i]}', line=dict(color=['cyan', 'magenta'][i])
+            mode='lines+markers', 
+            name=name, 
+            line=dict(color=color),
+            marker=dict(
+                symbol='circle',
+                size=3,
+            ),
+            opacity = 0.7,
         ), row=2, col=1)
-        end_x = mean[0] + 2 * np.sqrt(eigvals[i]) * eigvecs[0, i]
-        end_y = mean[1] + 2 * np.sqrt(eigvals[i]) * eigvecs[1, i]
-        
-     
     
+        
     # Update layout
     fig.update_layout(
         title_text='Bivariate Gaussian Distribution with Marginals',
         title_y=0.95,
         autosize=False,
-        width=700,
-        height=700,
-        legend=dict(x=0.7, y=1),
+        width=650,
+        height=650,
+        legend=dict(x=0.73, y=1),
         plot_bgcolor='white',
         paper_bgcolor='white',
-        uirevision='true',
-
-    )
+        uirevision='true'  )
     
     fig.update_xaxes(title_text="x1", row=2, col=1, showgrid=False)
     fig.update_yaxes(title_text="x2", row=2, col=1, showgrid=False)
@@ -166,7 +175,7 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
     
     # Create the 3D plot
     fig = go.Figure()
-    fig.add_trace(go.Surface(x=X1, y=X2, z=Z, colorscale='RdYlBu', opacity=0.7, cmin=0, cmax=Z.max()))
+    fig.add_trace(go.Surface(x=X1, y=X2, z=Z, colorscale='RdYlBu', opacity=0.7, cmin=0, cmax=Z.max(), colorbar=dict(x=1.1, len=0.5)))
 
         # Plot KDE for smoother marginal distributions
     x1_kde = np.linspace(mean[0] - 6*np.sqrt(cov[0, 0]), mean[0] + 6*np.sqrt(cov[0, 0]), 100)
@@ -205,7 +214,7 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
         name='Marginal p(x2)' ))
     
     # Scatter plot of the samples
-    fig.add_trace(go.Scatter3d(x=samples[:, 0], y=samples[:, 1], z=np.full_like(samples[:, 0], -0.4), name="Samples", mode='markers', marker=dict(size=3, color='dimgray')))
+    fig.add_trace(go.Scatter3d(x=samples[:, 0], y=samples[:, 1], z=np.full_like(samples[:, 0], -0.2), name="Samples", mode='markers', marker=dict(size=3, color='dimgray')))
     
     fig.update_layout(
         xaxis_showgrid=False,
@@ -219,8 +228,8 @@ def plot_multivariate_Gaussian_3d(mean, cov, y_value = None):
         ),
         title='Bivariate Gaussian Distribution with Marginals',
         autosize=True,
-        width=800,
-        height=800,
+        width=700,
+        height=700,
         legend=dict(
             x=0.02,
             y=0.98,
@@ -385,7 +394,7 @@ def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_labe
         X_all = X[0:i + batch_size].reshape(-1, 1)
         y_all = y[0:i + batch_size]
         
-        mean_f_inc, cov_f_inc, log_Z = gp_inference(mean_f_inc, cov_f_inc, params, Xi, yi, False)
+        mean_f_inc, cov_f_inc, log_Z = GP_conditional(mean_f_inc, cov_f_inc, params, Xi, yi, False)
         log_Z_inc += log_Z
 
         mu_pred_inc = mean_f_inc(Xtest)
@@ -430,8 +439,6 @@ def conditional_gps_visualisation(batch_size, N, X, y, Xtest, ytest, status_labe
 
 ##### MARGINALISATION OPERATION ###########
 
-##### MARGINALISATION OPERATION ###########
-
 def gpr_components_visualisation():
     fig = make_subplots(
         rows=2, cols=4, 
@@ -441,13 +448,13 @@ def gpr_components_visualisation():
                [None, {}, {}, {}]], 
         horizontal_spacing=0.05,
    # subplot_titles=("", 
-   #                      "kₗᵧ(x, x') = k(x, x') - k(x, x)[K + σₙ²I]⁻¹k(x, x')", 
-   #                      "mₗᵧ(x) = m(x) + k(x, x)[K + σₙ²I]⁻¹(y - m)", 
+   #                      "kₗᵧ(x*, x*) = k(x*, x*) - k(x, x)[K + σₙ²I]⁻¹k(x, x')", 
+   #                      "mₗᵧ(x*) = m(x) + k(x, x)[K + σₙ²I]⁻¹(y - m)", 
    #                      ""))
 
 
-    subplot_titles=("", "k(x,x')", "k(x,x)[K+σₙ²I]⁻¹k(x,x')", "kₗᵧ(x,x')",
-                        "m(x)", "k(x,x)[K+σₙ²I]⁻¹(y-m)", "mₗᵧ(x)", "Post Mean"),
+    subplot_titles=("", "k(x*,x*)", "k(x*,x)[K+σₙ²I]⁻¹k(x,x*)", "kₗᵧ(x*,x*)",
+                        "m(x*)", "k(x*,x)[K+σₙ²I]⁻¹(y-m)", "mₗᵧ(x*)", "Post Mean"),
         
     )
      # Reduce the font size for subplot titles
@@ -502,18 +509,19 @@ def gpr_components_visualisation():
 
     fig.update_xaxes(range=[-8, 8], row=1, col=1)  # Restrict x-axis range for overall data
     output = widgets.Output()
-    fig.update_xaxes(matches='x', row=1, col=1)  # Overall Data
-    fig.update_xaxes(matches='x', row=1, col=2)  # Prior Cov
-    fig.update_xaxes(matches='x', row=1, col=3)  # Data Cov
-    fig.update_xaxes(matches='x', row=1, col=4)  # Posterior Cov
+     # Match axes for heatmaps with adjusted margins
+    fig.update_xaxes(title_text="X", matches='x', row=1, col=1)  # Overall Data
+    fig.update_xaxes(title_text="X", matches='x', row=1, col=2, title_standoff = 0,title_font=dict(size=9))  # Prior Cov
+    fig.update_xaxes(title_text="X", matches='x', row=1, col=3,title_standoff = 0,title_font=dict(size=9))  # Data Cov
+    fig.update_xaxes(title_text="X", matches='x', row=1, col=4, title_standoff = 0,title_font=dict(size=9))  # Posterior Cov
     
-    fig.update_yaxes(matches='x', row=1, col=2)  # Prior Cov
-    fig.update_yaxes(matches='x', row=1, col=3)  # Data Cov
-    fig.update_yaxes(matches='x', row=1, col=4)  # Posterior Cov
+    fig.update_yaxes(title_text="X", matches='x', row=1, col=2,title_standoff=0,title_font=dict(size=9))  # Prior Cov
+    fig.update_yaxes(matches='x', row=1, col=3,title_standoff=0,title_font=dict(size=9))  # Data Cov
+    fig.update_yaxes( matches='x', row=1, col=4,title_standoff=0,title_font=dict(size=9))  # Posterior Cov
     
-    fig.update_xaxes(matches='x', row=2, col=2)  # Prior Mean
-    fig.update_xaxes(matches='x', row=2, col=3)  # Data Mean
-    fig.update_xaxes(matches='x', row=2, col=4)  # Posterior Mean
+    fig.update_xaxes(title_text="X", matches='x', row=2, col=2,title_standoff=0,title_font=dict(size=9))  # Prior Mean
+    fig.update_xaxes(title_text="X", matches='x', row=2, col=3,title_standoff=0,title_font=dict(size=9))  # Data Mean
+    fig.update_xaxes(title_text="X", matches='x', row=2, col=4,title_standoff=0,title_font=dict(size=9))  # Posterior Mean
     
 
     for col in [2, 3, 4]:
@@ -553,51 +561,6 @@ def gpr_components_visualisation():
     return fig
 
 
-
-##### MARGINALISATION  ###########
-
-# def create_figure(X_vals, Y_vals, Z_vals, X_label, Y_label, title, project_contour=True):
-#     X_mesh, Y_mesh = np.meshgrid(X_vals, Y_vals)
-#     diff = Z_vals.max() - Z_vals.min()
-#     contour_offset = Z_vals.min() - diff
-
-#     surface = go.Surface(
-#         z=Z_vals.T, 
-#         x=X_vals, 
-#         y=Y_vals, 
-#         colorscale='RdYlBu', 
-#         opacity=1,
-#         contours=dict(
-#             z=dict(
-#                 show=project_contour,
-#                 start=Z_vals.min(),
-#                 end=Z_vals.max(),
-#                 size=(Z_vals.max() - Z_vals.min()) / 100,
-#                 usecolormap=True,
-#                 project=dict(z=project_contour)     
-#             )
-#         )
-#     )
-
-#     data = [surface]
-
-#     layout = go.Layout(
-#         title=title,
-#         scene=dict(
-#             xaxis=dict(title=X_label),
-#             yaxis=dict(title=Y_label),
-#             zaxis=dict(title='Log Marginal Likelihood', range=[contour_offset, Z_vals.max()]),
-#             aspectmode='cube',  # Ensure the plot is square
-
-#         ),
-#         margin=dict(l=0, r=0, b=0, t=40)
-#     )
-
-#     fig = go.Figure(data=data, layout=layout)
-#     return fig
-
-
-
 #########   Log Marginal Likelihood   #########
 
 
@@ -615,7 +578,7 @@ def compute_log_marginal_likelihood(param1_values, param2_values, param1_name, p
 
 def create_figure(X_vals, Y_vals, Z_vals, X_label, Y_label, title, project_contour=True):
     X_mesh, Y_mesh = np.meshgrid(X_vals, Y_vals)
-    diff = Z_vals.max() - Z_vals.min()
+    diff = (Z_vals.max() - Z_vals.min()) // 2
     contour_offset = Z_vals.min() - diff
 
     surface = go.Surface(
@@ -642,9 +605,9 @@ def create_figure(X_vals, Y_vals, Z_vals, X_label, Y_label, title, project_conto
             zaxis=dict(title='Negative Log Marginal Likelihood', range=[contour_offset, Z_vals.max()]),
             aspectmode='cube',
         ),
-        width=700,
-        height=700,
-        margin=dict(l=0, r=0, b=0, t=40)
+        width=600,
+        height=600,
+       # margin=dict(l=0, r=0, b=0, t=20)
     )
 
     fig = go.Figure(data=data, layout=layout)
@@ -662,9 +625,9 @@ def kernel_comparison_gpr(X, y, Xtest, ytest,kernels, kernel_names, mean_functio
     for i, k in enumerate(kernels):
         params = {'varSigma': 1, 'lengthscale': 1, 'noise': 1, 'period': 1}
         if optimised:
-            mu_f, k_f, log_Z = gp_inference_optimised(mean_function, k, X, y, params)
+            mu_f, k_f, log_Z = GP_conditional_optimised(mean_function, k, X, y, params)
         else:
-            mu_f, k_f, log_Z = gp_inference(mean_function, k, params, X, y, False)
+            mu_f, k_f, log_Z = GP_conditional(mean_function, k, params, X, y, False)
         title = f'{kernel_names[i]} Kernel'
         LLs.append(log_Z)  # Negative log marginal likelihood
         mu_pred = mu_f(Xtest)
@@ -693,182 +656,10 @@ def kernel_comparison_gpr(X, y, Xtest, ytest,kernels, kernel_names, mean_functio
         handles, labels = ax[0].get_legend_handles_labels()
         fig.legend(handles, labels, loc='upper center', ncol=4, bbox_to_anchor=(0.5, 0),  prop={'size': 26})
     if optimised:
-        fig.suptitle("Gaussian Process Regression after hyperparameter optimisation ")
+        fig.suptitle("Gaussian Process Regression after hyperparameter optimisation ", fontsize = title_fontsize)
     else:
-        fig.suptitle("Gaussian Process Regression before hyperparameter optimisation ")
+        fig.suptitle("Gaussian Process Regression before hyperparameter optimisation ", fontsize = title_fontsize)
     plt.tight_layout()
     plt.show()
     return LLs, params_all
-
-
-
-# def plot_kernel_and_samples(mu_f, K_f, params, x, n, k_name="", mu_name=""):
-#     K = K_f(x, x, params) + params["noise"]**2 * np.eye(len(x)) 
-#     m = mu_f(x)
-
-#     #L = np.linalg.cholesky(K)
-
-#     f = draw_samples(m, K, n)
-    
-#     # Generate samples from the Gaussian process
-#     #U = np.random.normal(loc=0, scale=1, size=(len(x), n))
-#     #f = m[:, None] + np.dot(L, U)  # Broadcasting the mean vector to match the shape of samples
-    
-#     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-#     im = ax1.imshow(K, aspect="auto", extent=[-6, 6, -6, 6], origin='lower')
-#     ax1.set_title(f"{k_name} Kernel Matrix")
-#     plt.colorbar(im, ax=ax1)
-    
-#     ax2.plot(x, f)
-#     ax2.set_title("Samples from GP")
-
-#     plt.show()
-#     plt.tight_layout()
-
-
-
-# def plot_posterior(K1, K2, K3, X, y, Xtest, ytest, k_pred, mu_pred, kernel_name = ""):
-#     fig, ax = plt.subplots(1, 3, figsize=(24, 6))#6
-#     im = ax[0].imshow(K1, aspect="auto", extent=[-6, 6, -6, 6], origin='lower')
-#     ax[0].set_title("Prior Covariance Matrix$", fontsize=16)
-#     plt.colorbar(im, ax=ax[0])
-    
-#     im = ax[1].imshow(K2, aspect="auto", extent=[-6, 6, -6, 6], origin='lower')
-#     ax[1].set_title("Data Covariance Contribution Matrix", fontsize=16)
-#     plt.colorbar(im, ax=ax[1])
-    
-#     im = ax[2].imshow(K3, aspect="auto", extent=[-6, 6, -6, 6], origin='lower')
-#     ax[2].set_title("Posterior Covariance Matrix", fontsize=16)
-#     plt.colorbar(im, ax=ax[2])
-
-#     # Save the figure to a BytesIO object
-#     buf = BytesIO()
-#     fig.savefig(buf, format='png')
-#     buf.seek(0)
-#     plt.close(fig)
-#     image_base64_cov = base64.b64encode(buf.read()).decode('ascii')
-# #
-#     # Plot predictive mean and variance
-#     fig, ax = plt.subplots(figsize=(24, 6))
-#     ax.plot(X, y, 'ro', label="Observations")
-#     ax.plot(Xtest, ytest, 'g-', label="Ground truth")
-#     ax.fill_between(Xtest.flatten(), mu_pred - 2 * k_pred, mu_pred + 2 * k_pred, color='blue', alpha=0.2, label='Predictive variance')
-#     ax.plot(Xtest, mu_pred, 'b--', lw=2, label="Predictive Mean")
-#     ax.set_title(f'Gaussian Process Regression {kernel_name}', fontsize=16)
-#     ax.set_xlabel('x', fontsize=14)
-#     ax.set_ylabel('y', fontsize=14)
-#     ax.legend()
-
-#     # Save the plot to a BytesIO object
-#     buf = BytesIO()
-#     plt.savefig(buf, format='png')
-#     buf.seek(0)
-#     plt.close(fig)
-    
-#     image_base64_gp = base64.b64encode(buf.read()).decode('ascii')
-
-#     return f"data:image/png;base64,{image_base64_cov}", f"data:image/png;base64,{image_base64_gp}"
-
-# def data_1d(N, noise):
-#     x = np.random.randn(N)
-#     x = np.sort(x)
-#     y = np.sin(3 * x).flatten()
-#     y = y + noise * np.random.randn(N)
-#     x = x.reshape(-1, 1)
-#     return x, y
-
-# def plot_data(X, y):
-#     plt.figure(figsize = (24,6))
-#     plt.scatter(X, y, color='red')
-#     plt.title('Generated Data with Noise')
-#     plt.xlabel('X')
-#     plt.ylabel('y')
-#     buffer = BytesIO()
-#     plt.savefig(buffer, format='png')
-#     buffer.seek(0)
-#     img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-#     plt.close()
-#     return 'data:image/png;base64,{}'.format(img_base64)
-
-# def plot_combined_data_and_gp(X, y, Xtest, mu_pred, k_pred):
-#     plt.figure()
-#     plt.scatter(X, y, color='red', label='Data')
-#     plt.plot(Xtest, mu_pred, color='blue', label='GP Mean')
-#     plt.fill_between(Xtest.flatten(), mu_pred - 1.96 * k_pred, mu_pred + 1.96 * k_pred, color='blue', alpha=0.2, label='GP 95% CI')
-#     plt.title('Data and GP Fit')
-#     plt.xlabel('X')
-#     plt.ylabel('y')
-#     plt.legend()
-#     buffer = BytesIO()
-#     plt.savefig(buffer, format='png')
-#     buffer.seek(0)
-#     img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-#     plt.close()
-#     return 'data:image/png;base64,{}'.format(img_base64)
-
-
-
-# def plot_data_and_gp(X, y, Xtest, mu_pred, k_pred, x_range):
-#     trace_data = go.Scatter(x=X.flatten(), y=y, mode='markers', marker=dict(color='red'), name='Data')
-#     trace_mean = go.Scatter(x=Xtest.flatten(), y=mu_pred, mode='lines', line=dict(color='blue', width=3), name='GP Mean')
-#     trace_ci = go.Scatter(x=np.concatenate([Xtest.flatten(), Xtest.flatten()[::-1]]),
-#                           y=np.concatenate([mu_pred - 1.96 * k_pred, (mu_pred + 1.96 * k_pred)[::-1]]),
-#                           fill='toself', fillcolor='rgba(0,0,255,0.2)', line=dict(color='rgba(255,255,255,0)'), name='GP 95% CI')
-   
-#     fig = go.Figure(data=[trace_data, trace_mean, trace_ci], layout=layout_data_and_gp)
-#     return go.FigureWidget(fig)
-
-
-# def plot_contribution(m1, m2, m3, title1, title2, title3, common_layout):
-#     m1 = np.repeat(m1, 100, 0)
-#     m2 = np.repeat(m2, 100, 0)
-#     m3 = np.repeat(m3, 100, 0)
-    
-#     trace_m1 = go.Heatmap(z=m1, colorscale='RdYlBu', showscale=False)
-#     trace_m2 = go.Heatmap(z=m2, colorscale='RdYlBu', showscale=False)
-#     trace_m3 = go.Heatmap(z=m3, colorscale='RdYlBu', showscale=False)
-    
-#     layout_m1 = go.Layout(title_text=title1, **common_layout)
-#     layout_m2 = go.Layout(title_text=title2, **common_layout)
-#     layout_m3 = go.Layout(title_text=title3, **common_layout)
-    
-#     fig_m1 = go.FigureWidget(data=[trace_m1], layout=layout_m1)
-#     fig_m2 = go.FigureWidget(data=[trace_m2], layout=layout_m2)
-#     fig_m3 = go.FigureWidget(data=[trace_m3], layout=layout_m3)
-#     return fig_m1, fig_m2, fig_m3
-
-
-# def plot_colorbar():
-#     trace = go.Heatmap(z=[[0, 1], [1, 0]], colorscale='RdYlBu', showscale=True, colorbar=dict(thickness=10, len=1.0, y=0.3, yanchor='middle'))
-#     fig = go.Figure(data=[trace], layout=layout_colorbar)
-#     return go.FigureWidget(fig)
-
-# def plot_gp_figures(X, y, Xtest, ytest, kernel_f, mean_f, params, x_range):
-#     mu_f, k_f, log_Z, cov_contribution_f, mean_contribution_f = gp_inference(mean_f, kernel_f, params, X, y, True)
-#     mu_pred, k2 = GP_marginal(mu_f, k_f, Xtest)
-#     k_pred = np.sqrt(np.diag(k2))
-
-#     fig_data_gp = plot_data_and_gp(X, y, Xtest, mu_pred, k_pred, x_range)
-
-#     K1 = kernel_f(Xtest, Xtest, params)  # marginalised prior covariance on test data points
-#     K2 = cov_contribution_f(Xtest, Xtest)  # marginalised data
-#     K3 = k_f(Xtest, Xtest, params)  # marginalised covariance 
-    
-#     fig_k1, fig_k2, fig_k3 = plot_contribution(K1, K2, K3, "Prior Covariance Matrix", "Data Contribution", "Posterior Covariance Matrix",common_layout_cov)
-
-#     mu1 = mean_f(Xtest).reshape(1, -1)  # marginalised prior mean on test data points
-#     mu2 = mean_contribution_f(Xtest).reshape(1, -1)  # marginalised data mean contribution
-#     mu3 = mu_f(Xtest).reshape(1, -1)  # marginalised posterior mean
-   
-#     fig_m1, fig_m2, fig_m3 = plot_contribution( mu1, mu2, mu3, "Prior Mean", "Data Contribution Mean", "Posterior Mean",common_layout_mean)
-#     fig_colorbar = plot_colorbar()
-
-#     return fig_data_gp, fig_k1, fig_k2, fig_k3, fig_m1, fig_m2, fig_m3, fig_colorbar
-
-
-# def plot_overall_data(X, y):
-#     trace_data = go.Scatter(x=X.flatten(), y=y, mode='markers', marker=dict(color='red'), name='Data')
-#     fig = go.Figure(data=[trace_data], layout=layout_data)
-#     return go.FigureWidget(fig)
-
 
