@@ -1,7 +1,9 @@
-# Interactive Gaussian Process Tutorial using a Jupyter notebook 
+# Interactive 'process-centric' Gaussian Process Tutorial 
 ## Process-centric GPs
 
-This tutorial provides an interactive exploration of 'process-centric' Gaussian Processes (GPs) which provide a new framework towards Gaussian processes which is conceptually simpler and easy to implement. The notebook can be directly accessed using Google Colab. Best interactivity is achieved when selecting the T4 GPU. 
+This tutorial provides an interactive exploration of 'process-centric' Gaussian Processes (GPs) which provide a new framework towards Gaussian processes which is conceptually simpler and easy to implement.
+
+The notebook can be directly accessed using Google Colab. Best interactivity is achieved when selecting the T4 GPU. 
 
 
 ![conditioning_posteriorgp](https://github.com/user-attachments/assets/aa025a8f-fd8d-4960-8a54-07e312d877f9)
