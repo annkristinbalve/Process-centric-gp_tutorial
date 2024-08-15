@@ -4,18 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from functools import partial
-
-import numpy as np
-import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-from scipy.spatial.distance import cdist
 from autograd import grad
 from autograd import numpy as anp
-
-# import packages
-from scipy.spatial.distance import cdist
-import numpy as np
-import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
 
@@ -31,9 +22,6 @@ def rbf_kernel(X1, X2, params):
 def lin_kernel(x1, x2, params):
     K = params["varSigma"]**2*x1.dot(x2.T)# var * x1 * x2 (5,1) * (1,5) -> (5,5) 
     return K
-
-#def white_kernel(x1, x2, params):
-   # return params["varSigma"]**2*np.eye(x1.shape[0])  # var*x1 .> covariance matrix can only be computed if same input 
 
 
 def white_kernel(x1, x2, params):
