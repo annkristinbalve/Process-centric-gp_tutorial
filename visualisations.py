@@ -7,37 +7,24 @@ import numpy as np
 from matplotlib import cm
 from scipy.stats import multivariate_normal, norm
 import io
-import plotly.graph_objects as go
 import math
 
-from kernels import rbf_kernel, lin_kernel, periodic_kernel, white_kernel
-from means import zero_mean, sine_mean,lin_mean, step_mean ## importing mean functions 
-
-from gp_functions import GP_conditional, GP_marginal, GP_conditional_iterative, draw_samples
 import plotly.subplots as sp
 from plotly.subplots import make_subplots
 import json
-import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import multivariate_normal, norm
-import math
 import ipywidgets as widgets
 from IPython.display import display
-
-from ipywidgets import Label, Layout
-import plotly.graph_objects as go
-
-
-### marginalisation plot
-import numpy as np
-import plotly.graph_objects as go
 from ipywidgets import widgets, VBox, HBox, Layout, interactive
+from ipywidgets import Label, Layout
+
+import plotly.graph_objects as go
 from kernels import *
 from means import *
 from gp_functions import *
 from data import *
-from IPython.display import display
 from widgets_helper import * #range_slider, kernel_dropdown, mean_dropdown
 from layout_helper import *
 
