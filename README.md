@@ -10,7 +10,7 @@ The notebook can be directly accessed using Google Colab. Best interactivity is 
 
 The Tutorial can be accessed using Google-colab. 
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/Tutorial_Colab_Study.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/annkristinbalve/Process-centric-gp_tutorial/blob/main/Tutorial_Colab_Final.ipynb)
 
 ## Running the Tutorial Locally
 
