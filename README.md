@@ -1,7 +1,8 @@
 # Interactive 'process-centric' Gaussian Process Tutorial 
 ## Process-centric GPs
 
-This tutorial provides an interactive exploration of 'process-centric' Gaussian Processes (GPs) which provide a new framework towards Gaussian processes which is conceptually simpler and easy to implement.
+This tutorial provides an interactive exploration of 'process-centric' Gaussian Processes (GPs) which provide a new framework towards Gaussian processes which is conceptually simpler and easy to implement. Please refer to my thesis for more information: 
+![Process-centric Gaussian processes](https://www.mlmi.eng.cam.ac.uk/files/2023-2024/balve_process_2024_1kb.pdf)
 
 The notebook can be directly accessed using Google Colab. Best interactivity is achieved when selecting the T4 GPU. 
 
